@@ -1750,13 +1750,14 @@ class Trainer:
                                 for _, metric in self.state.train_metrics.items():
                                     metric.update(eval_outputs, target)
                             else:
-                                eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
-                                for _, metric in self.state.train_metrics.items():
-                                    self._original_model.update_metric(
-                                        eval_microbatch,
-                                        eval_outputs,
-                                        metric,
-                                    )
+                                # eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
+                                # for _, metric in self.state.train_metrics.items():
+                                #     self._original_model.update_metric(
+                                #         eval_microbatch,
+                                #         eval_outputs,
+                                #         metric,
+                                #     )
+                                pass
 
                 except RuntimeError as e:
                     if self.adaptive_gradient_accumulation and _is_cuda_oom(e):
@@ -1993,10 +1994,10 @@ class Trainer:
 
             self.engine.run_event(Event.AFTER_BACKWARD)
 
-            # # Use microbatch outputs to update training metrics
-            # if self.state.train_metrics is not None:
-            #     self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
-            #     self._eval_train_metrics(device_batch)
+            # Use microbatch outputs to update training metrics
+            if self.state.train_metrics is not None:
+                self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
+                self._eval_train_metrics(device_batch)
 
         if self.deepspeed_enabled:
             self.state.deepspeed_model.step()

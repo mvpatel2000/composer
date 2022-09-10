@@ -1736,30 +1736,30 @@ class Trainer:
             while True:
                 found_cuda_oom = 0  # int since bool BOR not supported on all torch.distributed backends
                 try:
-                    # for eval_microbatch in self._train_data_spec.split_batch(device_batch, self.state.eval_batch_split):
-                    #     # TODO: Detect if self.run_event(Event.AFTER_DATALOADER) changes the training
-                    #     # data and if so print a warning that metrics may return unexpected results
-                    #     with get_precision_context(self.state.precision):
-                    #         if hasattr(self._original_model, 'validate'):  # backwards compatibility check
-                    #             # warnings.warn(
-                    #             #     'Using validate() is no longer supported and will be removed in a future version. Please use eval_forward() instead.'
-                    #             # )
-                    #             # assert isinstance(self._original_model.validate, Callable)
-                    #             # eval_outputs, target = self._original_model.validate(eval_microbatch)
+                    for eval_microbatch in self._train_data_spec.split_batch(device_batch, self.state.eval_batch_split):
+                        # # TODO: Detect if self.run_event(Event.AFTER_DATALOADER) changes the training
+                        # # data and if so print a warning that metrics may return unexpected results
+                        # with get_precision_context(self.state.precision):
+                        #     if hasattr(self._original_model, 'validate'):  # backwards compatibility check
+                        #         # warnings.warn(
+                        #         #     'Using validate() is no longer supported and will be removed in a future version. Please use eval_forward() instead.'
+                        #         # )
+                        #         # assert isinstance(self._original_model.validate, Callable)
+                        #         # eval_outputs, target = self._original_model.validate(eval_microbatch)
 
-                    #             # for _, metric in self.state.train_metrics.items():
-                    #             #     metric.update(eval_outputs, target)
-                    #             pass
-                    #         else:
-                    #             # eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
-                    #             # for _, metric in self.state.train_metrics.items():
-                    #             #     self._original_model.update_metric(
-                    #             #         eval_microbatch,
-                    #             #         eval_outputs,
-                    #             #         metric,
-                    #             #     )
-                    #             pass
-                    pass
+                        #         # for _, metric in self.state.train_metrics.items():
+                        #         #     metric.update(eval_outputs, target)
+                        #         pass
+                        #     else:
+                        #         # eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
+                        #         # for _, metric in self.state.train_metrics.items():
+                        #         #     self._original_model.update_metric(
+                        #         #         eval_microbatch,
+                        #         #         eval_outputs,
+                        #         #         metric,
+                        #         #     )
+                        #         pass
+                        pass
 
                 except RuntimeError as e:
                     if self.adaptive_gradient_accumulation and _is_cuda_oom(e):
@@ -1999,7 +1999,7 @@ class Trainer:
             # Use microbatch outputs to update training metrics
             if self.state.train_metrics is not None:
                 self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
-                # self._eval_train_metrics(device_batch)
+                self._eval_train_metrics(device_batch)
 
         if self.deepspeed_enabled:
             self.state.deepspeed_model.step()

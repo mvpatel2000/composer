@@ -1741,14 +1741,15 @@ class Trainer:
                         # data and if so print a warning that metrics may return unexpected results
                         with get_precision_context(self.state.precision):
                             if hasattr(self._original_model, 'validate'):  # backwards compatibility check
-                                warnings.warn(
-                                    'Using validate() is no longer supported and will be removed in a future version. Please use eval_forward() instead.'
-                                )
-                                assert isinstance(self._original_model.validate, Callable)
-                                eval_outputs, target = self._original_model.validate(eval_microbatch)
+                                # warnings.warn(
+                                #     'Using validate() is no longer supported and will be removed in a future version. Please use eval_forward() instead.'
+                                # )
+                                # assert isinstance(self._original_model.validate, Callable)
+                                # eval_outputs, target = self._original_model.validate(eval_microbatch)
 
-                                for _, metric in self.state.train_metrics.items():
-                                    metric.update(eval_outputs, target)
+                                # for _, metric in self.state.train_metrics.items():
+                                #     metric.update(eval_outputs, target)
+                                pass
                             else:
                                 # eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
                                 # for _, metric in self.state.train_metrics.items():

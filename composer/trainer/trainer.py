@@ -1759,6 +1759,7 @@ class Trainer:
                                 #         metric,
                                 #     )
                                 pass
+                    pass
 
                 except RuntimeError as e:
                     if self.adaptive_gradient_accumulation and _is_cuda_oom(e):

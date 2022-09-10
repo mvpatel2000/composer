@@ -1750,7 +1750,7 @@ class Trainer:
                                 for _, metric in self.state.train_metrics.items():
                                     metric.update(eval_outputs, target)
                             else:
-                                eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
+                                # eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
                                 # for _, metric in self.state.train_metrics.items():
                                 #     self._original_model.update_metric(
                                 #         eval_microbatch,

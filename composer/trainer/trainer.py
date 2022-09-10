@@ -1730,7 +1730,7 @@ class Trainer:
         assert self._train_data_spec is not None, 'The train data spec should be set on __init__ or fit()'
         assert self.state.train_metrics is not None, 'The train metrics should be set on __init__ or fit()'
 
-        self.state.model.eval()
+        # self.state.model.eval()
         with torch.no_grad():
             # Retry until we successfully complete evaluation
             while True:
@@ -1996,10 +1996,10 @@ class Trainer:
 
             self.engine.run_event(Event.AFTER_BACKWARD)
 
-            # # Use microbatch outputs to update training metrics
-            # if self.state.train_metrics is not None:
-            #     self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
-            #     self._eval_train_metrics(device_batch)
+            # Use microbatch outputs to update training metrics
+            if self.state.train_metrics is not None:
+                self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
+                self._eval_train_metrics(device_batch)
 
         if self.deepspeed_enabled:
             self.state.deepspeed_model.step()

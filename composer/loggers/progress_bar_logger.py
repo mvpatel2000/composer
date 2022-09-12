@@ -52,7 +52,7 @@ class _ProgressBar:
             # by printing a dummy newline and refreshing to force tqdm to print to a stale line
             # But on k8s, we need `leave=True`, as it would otherwise overwrite the pbar in place
             # If in a notebook, then always set leave=True, as otherwise jupyter would remote the progress bars
-            leave=True if is_notebook() else not is_atty,
+            leave=True,
             postfix=metrics,
             unit=unit,
         )

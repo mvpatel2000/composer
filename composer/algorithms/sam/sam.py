@@ -99,6 +99,10 @@ class SAMOptimizer(torch.optim.Optimizer):
             loss = closure()
             if loss:
                 self.base_optimizer.step()
+            # Run loss a second time because we're dataloader bottlenecked
+            loss = closure()
+            if loss:
+                self.base_optimizer.step()
 
         self.global_step += 1
         return loss

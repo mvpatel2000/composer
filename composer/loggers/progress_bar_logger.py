@@ -141,10 +141,6 @@ class ProgressBarLogger(LoggerDestination):
     ) -> None:
 
         self._show_pbar = progress_bar
-        # The dummy pbar is to fix issues when streaming progress bars over k8s, where the progress bar in position 0
-        # doesn't update until it is finished.
-        # Need to have a dummy progress bar in position 0, so the "real" progress bars in position 1 doesn't jump around
-        self.dummy_pbar: Optional[_ProgressBar] = None
         self.train_pbar: Optional[_ProgressBar] = None
         self.eval_pbar: Optional[_ProgressBar] = None
 
@@ -239,9 +235,6 @@ class ProgressBarLogger(LoggerDestination):
         *   Otherwise, one progress bar will be used for all of training. Evaluation progress bars will be labeled
             with the time (in units of ``max_duration.unit``) at which evaluation runs.
         """
-        # Always using position=1 to avoid jumping progress bars
-        # In jupyter notebooks, no need for the dummy pbar, so use the default position
-        position = None if is_notebook() else 1
         desc = f'{state.dataloader_label:15}'
         max_duration_unit = None if state.max_duration is None else state.max_duration.unit
 
@@ -280,7 +273,7 @@ class ProgressBarLogger(LoggerDestination):
         return _ProgressBar(
             file=self.stream,
             total=total,
-            position=position,
+            position=None,
             keys_to_log=_IS_TRAIN_TO_KEYS_TO_LOG[is_train],
             # In a notebook, the `bar_format` should not include the {bar}, as otherwise
             # it would appear twice.
@@ -292,17 +285,6 @@ class ProgressBarLogger(LoggerDestination):
 
     def init(self, state: State, logger: Logger) -> None:
         del logger  # unused
-        if not is_notebook():
-            # Notebooks don't need the dummy progress bar; otherwise, it would be visible.
-            self.dummy_pbar = _ProgressBar(
-                file=self.stream,
-                position=0,
-                total=1,
-                metrics={},
-                keys_to_log=[],
-                bar_format='{bar:-1b}',
-                timestamp_key='',
-            )
         self.state = state
 
     def epoch_start(self, state: State, logger: Logger) -> None:
@@ -339,9 +321,6 @@ class ProgressBarLogger(LoggerDestination):
         if self.train_pbar:
             self.train_pbar.close()
             self.train_pbar = None
-        if self.dummy_pbar:
-            self.dummy_pbar.close()
-            self.dummy_pbar = None
 
     def eval_end(self, state: State, logger: Logger) -> None:
         if self.eval_pbar:

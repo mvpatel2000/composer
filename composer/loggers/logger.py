@@ -131,6 +131,7 @@ class Logger:
             overwrite (bool, optional): Whether to overwrite an existing artifact with the same ``artifact_name``.
                 (default: ``False``)
         """
+        print('\n\nLog artifact in logger', artifact_name)
         log_level = LogLevel(log_level)
         file_path = format_name_with_dist(format_str=str(file_path), run_name=self._state.run_name)
         file_path = pathlib.Path(file_path)

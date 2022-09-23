@@ -344,6 +344,7 @@ class CheckpointSaver(Callback):  # noqa: D101
             )
 
     def epoch_checkpoint(self, state: State, logger: Logger):
+        print('epoch', state.timestamp, self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT))
         if self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT):
             self._save_checkpoint(
                 state,

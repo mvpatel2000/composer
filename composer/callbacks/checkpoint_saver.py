@@ -68,6 +68,7 @@ def checkpoint_periodically(interval: Union[str, int, Time]) -> Callable[[State,
             # right before the epoch_checkpoint event, do not save another checkpoint at the epoch_checkpoint
             # event if the batch count didn't increase.
             if state.timestamp.batch != last_checkpoint_batch:
+                print('end of training, plz ckpt')
                 last_checkpoint_batch = state.timestamp.batch
                 return True
 
@@ -339,6 +340,7 @@ class CheckpointSaver(Callback):  # noqa: D101
 
     def batch_checkpoint(self, state: State, logger: Logger):
         if self.checkpoint_save_interval(state, Event.BATCH_CHECKPOINT):
+            print('batch checkpointing')
             self._save_checkpoint(
                 state,
                 logger,
@@ -346,8 +348,8 @@ class CheckpointSaver(Callback):  # noqa: D101
             )
 
     def epoch_checkpoint(self, state: State, logger: Logger):
-        print('epoch', state.timestamp, self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT))
         if self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT):
+            print('epoch checkpointing')
             self._save_checkpoint(
                 state,
                 logger,

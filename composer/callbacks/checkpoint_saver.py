@@ -63,6 +63,7 @@ def checkpoint_periodically(interval: Union[str, int, Time]) -> Callable[[State,
         assert elapsed_duration is not None, 'elapsed_duration is set on the BATCH_CHECKPOINT and EPOCH_CHECKPOINT'
 
         if elapsed_duration >= 1.0:
+            print('Elapsed Duration more than 1.0', state.timestamp)
             # if doing batch-wise checkpointing, and we saved a checkpoint at the batch_checkpoint event
             # right before the epoch_checkpoint event, do not save another checkpoint at the epoch_checkpoint
             # event if the batch count didn't increase.

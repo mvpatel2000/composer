@@ -79,6 +79,7 @@ def checkpoint_periodically(interval: Union[str, int, Time]) -> Callable[[State,
             raise RuntimeError(f'Invalid save_event: {save_event}')
 
         if event == save_event and int(count) % int(interval) == 0:
+            print('set', save_event, int(count), int(interval), state.timestamp)
             last_checkpoint_batch = state.timestamp.batch
             return True
 

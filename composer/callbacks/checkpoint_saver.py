@@ -337,6 +337,7 @@ class CheckpointSaver(Callback):  # noqa: D101
             raise NotImplementedError('weights_only=True is not supported when using DeepSpeed.')
 
     def batch_checkpoint(self, state: State, logger: Logger):
+        print('batch check', state.timestamp)
         if self.checkpoint_save_interval(state, Event.BATCH_CHECKPOINT):
             print('batch save ckpt', state.timestamp)
             self._save_checkpoint(
@@ -346,6 +347,7 @@ class CheckpointSaver(Callback):  # noqa: D101
             )
 
     def epoch_checkpoint(self, state: State, logger: Logger):
+        print('epoch check', state.timestamp)
         if self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT):
             print('epoch save ckpt', state.timestamp)
             self._save_checkpoint(

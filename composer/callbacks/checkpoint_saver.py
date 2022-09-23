@@ -63,6 +63,7 @@ def checkpoint_periodically(interval: Union[str, int, Time]) -> Callable[[State,
         assert elapsed_duration is not None, 'elapsed_duration is set on the BATCH_CHECKPOINT and EPOCH_CHECKPOINT'
 
         if elapsed_duration >= 1.0 and event == Event.BATCH_CHECKPOINT and state.timestamp.batch != last_checkpoint_batch:
+            print('ckpt end', state.timestamp.batch, last_checkpoint_batch)
             # Checkpoint on last Event.BATCH_CHECKPOINT if we didn't already checkpoint this batch.
             # Don't update last_checkpoint_batch or duplicate calls with no longer return True
             # for this event. Don't use Event.EPOCH_CHECKPOINT as it will be skipped if
@@ -77,6 +78,7 @@ def checkpoint_periodically(interval: Union[str, int, Time]) -> Callable[[State,
             raise RuntimeError(f'Invalid save_event: {save_event}')
 
         if event == save_event and int(count) % int(interval) == 0:
+            print('ckpt interval', int(count), int(interval))
             last_checkpoint_batch = state.timestamp.batch
             return True
 
@@ -336,6 +338,7 @@ class CheckpointSaver(Callback):  # noqa: D101
 
     def batch_checkpoint(self, state: State, logger: Logger):
         if self.checkpoint_save_interval(state, Event.BATCH_CHECKPOINT):
+            print('batch save ckpt', state.timestamp)
             self._save_checkpoint(
                 state,
                 logger,
@@ -344,6 +347,7 @@ class CheckpointSaver(Callback):  # noqa: D101
 
     def epoch_checkpoint(self, state: State, logger: Logger):
         if self.checkpoint_save_interval(state, Event.EPOCH_CHECKPOINT):
+            print('epoch save ckpt', state.timestamp)
             self._save_checkpoint(
                 state,
                 logger,

@@ -328,6 +328,7 @@ class ObjectStoreLogger(LoggerDestination):
         with self._object_lock:
             if object_name in self._logged_objects and not overwrite:
                 raise FileExistsError(f'Object {object_name} was already enqueued to be uploaded, but overwrite=False.')
+            print('\nLogging: ', object_name)
             self._logged_objects[object_name] = (copied_path, overwrite)
 
     def can_log_file_artifacts(self) -> bool:
@@ -361,6 +362,7 @@ class ObjectStoreLogger(LoggerDestination):
                         continue
                     self._file_upload_queue.put_nowait((copied_path, object_name, overwrite))
                     objects_to_delete.append(object_name)
+                    print('\nEnqueueing: ', object_name)
                     self._enqueued_objects.add(object_name)
                 for object_name in objects_to_delete:
                     del self._logged_objects[object_name]
@@ -549,6 +551,7 @@ def _upload_worker(
                     # Exceptions will be detected on the next batch_end or epoch_end event
                     raise FileExistsError(f'Object {uri} already exists, but allow_overwrite was set to False.')
             log.info('Uploading file %s to %s', file_path_to_upload, uri)
+            print('\nUploading: ', object_name)
             object_store.upload_object(
                 object_name=object_name,
                 filename=file_path_to_upload,

@@ -1860,6 +1860,7 @@ class Trainer:
         assert self._train_data_spec is not None
 
         with context():
+            fst = time.time()
             self.engine.run_event(Event.BEFORE_TRAIN_BATCH)
             start_time = time.time()
 
@@ -1901,6 +1902,7 @@ class Trainer:
             print('\nGradient Unscale', time.time() - start_time)
 
             self.engine.run_event(Event.AFTER_TRAIN_BATCH)
+            print('\nFull time:', time.time() - fst)
 
             return total_loss_dict['loss/train/total']
 

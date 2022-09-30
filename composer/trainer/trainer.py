@@ -1906,7 +1906,7 @@ class Trainer:
             print('\nGradient Unscale', time.time() - start_time)
 
             self.engine.run_event(Event.AFTER_TRAIN_BATCH)
-            print('\nFull time:', time.time() - fst)
+            print('\n\t\tFull time:', time.time() - fst)
 
             return total_loss_dict['loss/train/total']
 
@@ -2000,8 +2000,12 @@ class Trainer:
             mtt = time.time()
             # Use microbatch outputs to update training metrics
             if self.state.train_metrics is not None:
+                imtt = time.time()
                 self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
+                print('\nMetric device', time.time() - imtt)
+                imtt = time.time()
                 self._eval_train_metrics(device_batch)
+                print('\nEval Metrics', time.time() - imtt)
             print('\nMetric time', time.time() - mtt)
 
         if self.deepspeed_enabled:

@@ -1715,11 +1715,13 @@ class Trainer:
         assert self._train_data_spec is not None, 'The train data spec should be set on __init__ or fit()'
         assert self.state.train_metrics is not None, 'The train metrics should be set on __init__ or fit()'
 
+        eval_time = time.time()
         with torch.no_grad(), model_eval_mode(self.state.model):
             # Retry until we successfully complete evaluation
             while True:
                 found_cuda_oom = 0  # int since bool BOR not supported on all torch.distributed backends
                 try:
+                    ttt = time.time()
                     for eval_microbatch in self._train_data_spec.split_batch(device_batch, self.state.eval_batch_split):
                         with get_precision_context(self.state.precision):
                             if hasattr(self._original_model, 'validate'):  # backwards compatibility check
@@ -1732,13 +1734,18 @@ class Trainer:
                                 for _, metric in self.state.train_metrics.items():
                                     metric.update(eval_outputs, target)
                             else:
+                                start_time = time.time()
                                 eval_outputs = self._original_model.eval_forward(eval_microbatch, self.state.outputs)
+                                print('\nEval outputs', time.time() - start_time)
+                                start_time = time.time()
                                 for _, metric in self.state.train_metrics.items():
                                     self._original_model.update_metric(
                                         eval_microbatch,
                                         eval_outputs,
                                         metric,
                                     )
+                                print('\nMetric update', time.time() - start_time)
+                    print('\nMicrobatch loop', time.time() - ttt)
 
                 except RuntimeError as e:
                     if self.state.auto_grad_accum and _is_cuda_oom(e):
@@ -1756,6 +1763,7 @@ class Trainer:
                         # Skip return and rerun after handling oom
                         continue
                 # Return if we've successfully completed eval without OOMing.
+                print('\nEval time', time.time() - eval_time)
                 return
 
     def _run_evaluators(self, event: Event):

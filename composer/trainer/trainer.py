@@ -1868,20 +1868,17 @@ class Trainer:
 
             use_grad_scaling = self._use_grad_scaling(self.state.precision, self.state.scaler)
             print('\nGrad Scaling', time.time() - start_time)
-            log.info('\nGrad Scaling', time.time() - start_time)
             start_time = time.time()
 
             if not self.deepspeed_enabled:
                 for optimizer in self.state.optimizers:
                     optimizer.zero_grad()
             print('\nZero grad', time.time() - start_time)
-            log.info('\nZero grad', time.time() - start_time)
             start_time = time.time()
 
             # tracker for gradient accumulation
             current_batch_size = sum([self._train_data_spec.get_num_samples_in_batch(batch) for batch in microbatches])
             print('\nBatch size', time.time() - start_time)
-            log.info('\nBatch size', time.time() - start_time)
             start_time = time.time()
 
             for microbatch_idx, self.state.batch in enumerate(microbatches):
@@ -1895,7 +1892,6 @@ class Trainer:
                         total_loss_dict[loss_key] = self._device.tensor_to_device(torch.zeros(size=(1,)))
                     total_loss_dict[loss_key] += microbatch_loss
             print('\nMicrobatches', time.time() - start_time)
-            log.info('\nMicrobatches', time.time() - start_time)
             start_time = time.time()
 
             # Unscale gradients before `Event.AFTER_TRAIN_BATCH`
@@ -1903,7 +1899,6 @@ class Trainer:
                 for optimizer in ensure_tuple(self.state.optimizers):
                     self.state.scaler.unscale_(optimizer)
             print('\nGradient Unscale', time.time() - start_time)
-            log.info('\nGradient Unscale', time.time() - start_time)
 
             self.engine.run_event(Event.AFTER_TRAIN_BATCH)
 

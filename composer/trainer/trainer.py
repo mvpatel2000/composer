@@ -1883,8 +1883,11 @@ class Trainer:
             start_time = time.time()
 
             for microbatch_idx, self.state.batch in enumerate(microbatches):
+                mst = time.time()
                 is_final_microbatch = microbatch_idx + 1 == len(microbatches)
                 microbatch_loss_dict = self._train_microbatch(use_grad_scaling, current_batch_size, is_final_microbatch)
+                print('\nMicrobatch time', time.time() - mst, microbatch_idx)
+                mst = time.time()
 
                 # Aggregate each loss in microbatch_loss_dict into total_loss_dict
                 for k, microbatch_loss in microbatch_loss_dict.items():
@@ -1892,6 +1895,7 @@ class Trainer:
                     if loss_key not in total_loss_dict:
                         total_loss_dict[loss_key] = self._device.tensor_to_device(torch.zeros(size=(1,)))
                     total_loss_dict[loss_key] += microbatch_loss
+                print('\nAggregate', time.time() - mst, microbatch_idx)
             print('\nMicrobatches', time.time() - start_time)
             start_time = time.time()
 

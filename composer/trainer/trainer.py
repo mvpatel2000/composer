@@ -1788,6 +1788,7 @@ class Trainer:
         Returns:
             Dict[str, torch.Tensor]: a dictionary containing the total loss and individual losses if available.
         """
+        start_time = time.time()
         assert self._train_data_spec is not None, 'The train data spec should be set on __init__ or fit()'
 
         # Cache the device batch, because `self.state.batch` gets overridden in microbatching loop
@@ -1797,15 +1798,22 @@ class Trainer:
         while True:
             # Reset train_metrics on every batch
             # Placing reset here ensures that if auto grad accum catches an OOM, incomplete metric state is cleared
+            ttt = time.time()
             if self.state.train_metrics is not None:
                 for _, metric in self.state.train_metrics.items():
                     metric.reset()
+            print('\nReset metric', time.time() - ttt)
+            ttt = time.time()
 
             total_loss_dict = {'loss/train/total': self._device.tensor_to_device(torch.zeros(size=(1,)))}
             found_cuda_oom = 0  # int since bool BOR not supported on all torch.distributed backends
+            print('\nSetup vars', time.time() - ttt)
             try:
+                ttt = time.time()
                 assert self.state.scaler is not None
                 microbatches = self._train_data_spec.split_batch(device_batch, self.state.grad_accum)
+                print('\nSplit data', time.time() - ttt)
+                ttt = time.time()
                 if self._use_closures():
                     for optimizer in self.state.optimizers:
                         if use_grad_scaling:
@@ -1817,6 +1825,8 @@ class Trainer:
                                 microbatches, total_loss_dict, **kwargs).item())
                 else:
                     self._train_microbatches(microbatches, total_loss_dict)
+                    print('\nTrain microbatch outer', time.time() - ttt)
+                    ttt = time.time()
                     if not self.deepspeed_enabled:
                         for optimizer in self.state.optimizers:
                             if use_grad_scaling:
@@ -1826,6 +1836,8 @@ class Trainer:
                                     xm.optimizer_step(optimizer, barrier=True)
                                 else:
                                     optimizer.step()
+                        print('\nOptimizer step', time.time() - ttt)
+                        ttt = time.time()
             except RuntimeError as e:
                 if self.state.auto_grad_accum and _is_cuda_oom(e):
                     log.debug((f"Rank {dist.get_global_rank()} OOM'd."))
@@ -1833,10 +1845,13 @@ class Trainer:
                 else:
                     raise
 
+            ttt = time.time()
             if self.state.auto_grad_accum:
                 # Propagate across all ranks if any rank hit CUDA OOM
                 found_cuda_oom = self._device.tensor_to_device(torch.tensor([found_cuda_oom], dtype=torch.uint8))
                 dist.all_reduce(found_cuda_oom, reduce_operation='MAX')
+                print('\nPropagate aga', time.time() - ttt)
+                ttt = time.time()
                 if found_cuda_oom.item() == 1:
                     device_batch_size = self._train_data_spec.get_num_samples_in_batch(device_batch)
                     _adjust_grad_accum(self.state, device_batch_size)
@@ -1844,6 +1859,7 @@ class Trainer:
                     continue
             # Log grad_accum and return loss if we've completed without OOMing.
             self.logger.log_metrics({'trainer/grad_accum': self.state.grad_accum})
+            print('\n\t\tTotal batch time:', time.time() - start_time)
             return total_loss_dict
 
     def _train_microbatches(self,

@@ -1920,11 +1920,14 @@ class Trainer:
             minibatch_num_samples (int): Number of samples in the minibatch.
             is_final_microbatch (bool): If current microbatch is the last one.
         """
+        start_time = time.time()
         assert self.state.scaler is not None
         assert self._train_data_spec is not None
 
         # Cache the device batch, because `self.state.batch` gets overridden in microbatching loop
         device_batch = deepcopy(self.state.batch)
+        print('\nCache batch', time.time() - start_time)
+        start_time = time.time()
 
         microbatch_num_samples = self._train_data_spec.get_num_samples_in_batch(self.state.batch)
         sync_context = contextlib.nullcontext() if self.deepspeed_enabled else ddp_sync_context(
@@ -1932,6 +1935,8 @@ class Trainer:
             is_final_microbatch,
             self._ddp_sync_strategy,
         )
+        print('\nContext setup', time.time() - start_time)
+        start_time = time.time()
 
         with sync_context:
             # forward pass
@@ -1992,14 +1997,16 @@ class Trainer:
 
             self.engine.run_event(Event.AFTER_BACKWARD)
 
+            mtt = time.time()
             # Use microbatch outputs to update training metrics
             if self.state.train_metrics is not None:
                 self.state.train_metrics = self._ensure_metrics_device_and_dtype(self.state.train_metrics)
                 self._eval_train_metrics(device_batch)
+            print('\nMetric time', time.time() - mtt)
 
         if self.deepspeed_enabled:
             self.state.deepspeed_model.step()
-
+        print('\n_train_microbatch', time.time() - start_time)
         return microbatch_loss_dict
 
     def predict(

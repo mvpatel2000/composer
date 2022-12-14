@@ -323,7 +323,6 @@ def _launch_processes(
                     stdout=stdout_file,
                     stderr=stderr_file,
                     text=True,
-                    env=os.environ,
                 )
                 process.stderr = stderr_file
                 process.stdout = stdout_file

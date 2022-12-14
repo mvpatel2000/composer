@@ -318,8 +318,6 @@ def _launch_processes(
                 stderr_file = _get_file(stderr_file_format)
                 stdout_file = _get_file(stdout_file_format)
 
-                print(os.environ)
-                print(os.environ['LD_LIBRARY_PATH'])
                 process = subprocess.Popen(
                     cmd,
                     stdout=stdout_file,

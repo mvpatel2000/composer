@@ -1,17 +1,13 @@
 name: Pytest-GPU
+
 on:
-  pull_request_target:
+  pull_request_target
+
 jobs:
   pytest-gpu:
-    runs-on: ubuntu-20.04
+    name: Build and test
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Run Tests
-        id: tests
-        run: |
-          set -ex
-          export PATH=/composer-python:$PATH
-
-          export MCLI_KEY='${{ secrets.MCLI_KEY }}'
-
-          echo $MCLI_KEY
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}

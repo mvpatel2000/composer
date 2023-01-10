@@ -1,24 +1,9 @@
 name: Pytest-GPU
 on:
   pull_request_target
-
-# Cancel old runs when a new commit is pushed to the same branch if not on main or dev
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 jobs:
-  pytest:
-    timeout-minutes: 30
+  pytest-gpu:
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        include:
-          - name: 'gpu-debug'
-            container: mosaicml/pytorch_vision:1.12.1_cpu-python3.9-ubuntu20.04
-            markers: 'not daily and not remote and not gpu and not vision and doctest'
-            pytest_command: 'coverage run -m pytest tests/test_docs.py'
-    name: ${{ matrix.name }}
-    container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v2
       - name: Run Tests
@@ -26,10 +11,6 @@ jobs:
         run: |
           set -ex
           export PATH=/composer-python:$PATH
-          export COMMON_ARGS="-v --durations=20 -m '${{ matrix.markers }}'"
-
-          # Necessary to run git diff for doctests
-          git config --global --add safe.directory /__w/composer/composer
 
           export MCLI_KEY='${{ secrets.MCLI_KEY }}'
 

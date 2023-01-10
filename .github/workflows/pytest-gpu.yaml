@@ -1,6 +1,6 @@
 name: Pytest-GPU
 on:
-  pull_request_target
+  pull_request
 jobs:
   pytest-gpu:
     runs-on: ubuntu-20.04

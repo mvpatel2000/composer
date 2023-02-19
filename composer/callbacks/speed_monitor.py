@@ -104,6 +104,8 @@ class SpeedMonitor(Callback):
         batch_num_samples = int(state.timestamp.sample) - self.batch_start_num_samples
         batch_wct = state.timestamp.total_wct.total_seconds() - self.batch_start_wct
 
+        print(f'batch_num_samples: {batch_num_samples}, batch_wct: {batch_wct}')
+
         # Add the new element
         self.batch_wct_buffer.append(batch_wct)
         self.batch_num_samples_buffer.append(batch_num_samples)
@@ -112,6 +114,7 @@ class SpeedMonitor(Callback):
         if len(self.batch_num_samples_buffer) == self.window_size:
             throughput = sum(self.batch_num_samples_buffer) / sum(self.batch_wct_buffer)
             logger.log_metrics({'throughput/samples_per_sec': throughput})
+            print(f'throughput: {throughput}')
 
         # Log the time
         # `state.timestamp` excludes any time spent in evaluation

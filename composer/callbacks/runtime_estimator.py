@@ -4,6 +4,7 @@
 """Estimate total time of training."""
 from __future__ import annotations
 
+import math
 import time
 import warnings
 from typing import Dict, List, Optional
@@ -76,9 +77,10 @@ class RuntimeEstimator(Callback):
         # Keep track of time spent evaluating
         self.total_eval_wct = 0.0
         self.eval_wct_per_label: Dict[str, List[float]] = {}
+        # Last duration eval was called
+        self.last_eval_per_label: Dict[str, float] = {}
         # How often eval is called as fraction of total training time
         self.eval_frequency_per_label: Dict[str, float] = {}
-        self.last_elapsed_fraction: float = 0.0
 
     def _get_elapsed_duration(self, state: State) -> Optional[float]:
         """Get the elapsed duration.
@@ -135,17 +137,22 @@ class RuntimeEstimator(Callback):
             for dataloader_label, eval_wcts in self.eval_wct_per_label.items():
                 # Discard first eval_wct if possible as it is often slower due to dataset downloading
                 eval_wct_avg = None
-                num_evals_finished = len(eval_wcts)
-                if num_evals_finished > 1:
-                    eval_wct_avg = sum(eval_wcts[1:]) / (num_evals_finished - 1)
+                if len(eval_wcts) > 1:
+                    eval_wct_avg = sum(eval_wcts[1:]) / (len(eval_wcts) - 1)
                 else:
-                    eval_wct_avg = sum(eval_wcts) / num_evals_finished
+                    eval_wct_avg = sum(eval_wcts) / len(eval_wcts)
+
                 eval_rate = self.eval_frequency_per_label[dataloader_label]
-                num_total_evals = 1 / eval_rate * (1 - self.start_dur)
+                # Estimate total number of evals, rounding up assuming we eval at FIT_END
+                num_total_evals = math.ceil(1 / eval_rate)
+                # Estimate number of evals finished. We subtract epsilon as eval runs after
+                # batch_end, so we don't want to count it until elapsed_dur is strictly greater
+                # than the corresponding multiple of eval_rate
+                num_evals_finished = math.floor((elapsed_dur - 1.0e-12) / eval_rate)
                 remaining_calls = num_total_evals - num_evals_finished
                 remaining_time += eval_wct_avg * remaining_calls
                 print(
-                    f'eval_wct_avg: {eval_wct_avg}, eval_rate: {eval_rate}, num_total_evals: {num_total_evals}, remaining_calls: {remaining_calls}, remaining_time: {remaining_time}'
+                    f'eval_wct_avg: {eval_wct_avg}, eval_rate: {eval_rate}, num_total_evals: {num_total_evals}, num_evals_finished {num_evals_finished}, remaining_calls: {remaining_calls}, remaining_time: {remaining_time}'
                 )
 
             logger.log_metrics({'time/remaining_estimate': remaining_time / self.divider})
@@ -155,6 +162,7 @@ class RuntimeEstimator(Callback):
         if not self._enabled or self.start_time is None:
             return
         self.total_eval_wct += state.eval_timestamp.total_wct.total_seconds()
+
         # state.dataloader_label should always be non-None unless user explicitly sets evaluator
         # label to None, ignoring type hints
         assert state.dataloader_label is not None, 'evaluator label must not be None'
@@ -162,12 +170,16 @@ class RuntimeEstimator(Callback):
             self.eval_wct_per_label[state.dataloader_label] = []
         self.eval_wct_per_label[state.dataloader_label].append(state.eval_timestamp.total_wct.total_seconds())
         elapsed_dur = self._get_elapsed_duration(state)
+
         assert elapsed_dur is not None, 'max_duration checked as non-None on batch_start if enabled'
         assert self.start_dur is not None, 'start_dur is set on batch_start if enabled'
-        elapsed_fraction = elapsed_dur - self.start_dur
-        num_evals_finished = len(self.eval_wct_per_label[state.dataloader_label])
-        self.eval_frequency_per_label[state.dataloader_label] = elapsed_fraction / num_evals_finished
+        # Estimate rate by duration difference between last eval and current eval. If this is the
+        # first eval, use start_dur instead
+        elapsed_fraction = elapsed_dur - self.last_eval_per_label.get(state.dataloader_label, self.start_dur)
+        self.eval_frequency_per_label[state.dataloader_label] = elapsed_fraction
+        self.last_eval_per_label[state.dataloader_label] = elapsed_dur
         print(
-            f'start_dur: {self.start_dur}, elapsed_dur: {elapsed_dur}, elapsed_fraction: {elapsed_fraction}, num_evals_finished: {num_evals_finished}'
+            f'start_dur: {self.start_dur}, last_dur: {self.last_eval_per_label.get(state.dataloader_label, self.start_dur)} elapsed_dur: {elapsed_dur}, elapsed_fraction: {elapsed_fraction}'
         )
-        print(self.eval_frequency_per_label)
+        print('Last eval per label', self.last_eval_per_label)
+        print('Eval frequency', self.eval_frequency_per_label)

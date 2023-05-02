@@ -126,6 +126,10 @@ class RuntimeEstimator(Callback):
             rate = elapsed_time / (elapsed_dur - self.start_dur)
             remaining_time = rate * (1 - elapsed_dur)
 
+            print(
+                f'Remaining time estimate: {remaining_time}, rate: {rate}, elapsed_dur: {elapsed_dur}, start_dur: {self.start_dur}'
+            )
+
             # Add remaining time from each evaluator using known frequencies. We explicitly compute
             # frequency instead of using time interpolation to avoid saw tooth pattern in estimates
             for dataloader_label, eval_wcts in self.eval_wct_per_label.items():
@@ -140,6 +144,9 @@ class RuntimeEstimator(Callback):
                 num_total_evals = 1 / eval_rate * (1 - self.start_dur)
                 remaining_calls = num_total_evals - num_evals_finished
                 remaining_time += eval_wct_avg * remaining_calls
+                print(
+                    f'eval_wct_avg: {eval_wct_avg}, eval_rate: {eval_rate}, num_total_evals: {num_total_evals}, remaining_calls: {remaining_calls}, remaining_time: {remaining_time}'
+                )
 
             logger.log_metrics({'time/remaining_estimate': remaining_time / self.divider})
 
@@ -160,3 +167,7 @@ class RuntimeEstimator(Callback):
         elapsed_fraction = elapsed_dur - self.start_dur
         num_evals_finished = len(self.eval_wct_per_label[state.dataloader_label])
         self.eval_frequency_per_label[state.dataloader_label] = elapsed_fraction / num_evals_finished
+        print(
+            f'start_dur: {self.start_dur}, elapsed_dur: {elapsed_dur}, elapsed_fraction: {elapsed_fraction}, num_evals_finished: {num_evals_finished}'
+        )
+        print(self.eval_frequency_per_label)

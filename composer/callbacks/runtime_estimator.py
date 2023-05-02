@@ -127,7 +127,7 @@ class RuntimeEstimator(Callback):
             remaining_time = rate * (1 - elapsed_dur)
 
             print(
-                f'Remaining time estimate: {remaining_time}, rate: {rate}, elapsed_dur: {elapsed_dur}, start_dur: {self.start_dur}'
+                f'Remaining time estimate: {remaining_time}, rate: {rate}, elapsed_dur: {elapsed_dur}, start_dur: {self.start_dur}, elapsed_time: {elapsed_time}, total_eval_wct: {self.total_eval_wct}'
             )
 
             # Add remaining time from each evaluator using known frequencies. We explicitly compute

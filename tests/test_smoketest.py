@@ -23,3 +23,7 @@ def test_smoketest():
     assert profiler
     assert trainer
     assert utils
+
+
+def test_fail():
+    assert False

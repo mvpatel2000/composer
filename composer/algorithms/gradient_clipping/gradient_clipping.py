@@ -53,6 +53,8 @@ def apply_gradient_clipping(model: Union[ComposerModel, torch.nn.Module], clippi
                 # clip any gradients that aren't a parent module
                 try:
                     if clipping_type == 'norm':
+                        for param in module.parameters():
+                            print(f'param dtype: {param.dtype}, param: {param}')
                         module.clip_grad_norm_(max_norm=clipping_threshold)
                     elif clipping_type == 'value':
                         module.clip_grad_norm_(max_norm=clipping_threshold, norm_type=float('inf'))

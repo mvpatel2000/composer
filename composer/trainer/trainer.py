@@ -2427,6 +2427,7 @@ class Trainer:
 
             assert self.state.loss is not None
             self.engine.run_event(Event.AFTER_LOSS)
+            self.state.outputs = None
 
             # Backward Pass
             self.engine.run_event(Event.BEFORE_BACKWARD)

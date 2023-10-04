@@ -261,6 +261,11 @@ class SpeedMonitor(Callback):
         self.history_samples.append(state.timestamp.sample.value)
         self.history_wct.append(state.timestamp.total_wct.total_seconds())
 
+        print('\n\n')
+        print(self.history_samples)
+        print(self.history_wct)
+        print('\n\n')
+
         # Log the throughput
         if len(self.history_wct) == self.history_wct.maxlen:
             world_size = dist.get_world_size()

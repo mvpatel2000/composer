@@ -392,6 +392,7 @@ class CheckpointSaver(Callback):  # noqa: D101
 
             log.debug(f'Uploading checkpoint to {remote_file_name}')
             logger.upload_file(remote_file_name=remote_file_name, file_path=saved_path, overwrite=self.overwrite)
+            log.debug(f'Upload queued')
 
             # symlinks stay the same with sharded checkpointing
             if self.latest_remote_file_name is not None:

@@ -415,6 +415,8 @@ def load_sharded_checkpoint(
                 cur_state_dict.pop('optimizers')
                 model_state_dict = {'state': cur_state_dict}
 
+            print(model_state_dict)
+
             dist_cp.load_state_dict(model_state_dict, storage_reader)
 
             state.load_state_dict(

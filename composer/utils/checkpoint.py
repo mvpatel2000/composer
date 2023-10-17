@@ -303,8 +303,9 @@ def _get_module_name_mapping(model: torch.nn.Module) -> dict[str, str]:
             process_group = module.process_group
             process_group_size = torch.distributed.get_world_size(process_group)
             if process_group_size != world_size:
-                custom_process_group_size = world_size // process_group_size
-                process_group_index = dist.get_global_rank() % custom_process_group_size
+                # custom_process_group_size = world_size // process_group_size
+                # process_group_index = dist.get_global_rank() % custom_process_group_size
+                process_group_size = dist.get_local_rank()
                 new_module_name = module_name.replace('_fsdp_wrapped_module.', '')
                 for k in module.state_dict().keys():
                     full_module_name = '.'.join((new_module_name, k))

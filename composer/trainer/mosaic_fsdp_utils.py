@@ -116,7 +116,7 @@ def get_mixed_precision(precision, mixed_precision='DEFAULT', keep_low_precision
 
 def get_cpu_offload(cpu_offload=False):
     """Helper function for configuring cpu_offload."""
-    cpu_offload = CPUOffload(offload_params=True) if cpu_offload else None
+    cpu_offload = CPUOffload(offload_params=False) if cpu_offload else None
     if cpu_offload is not None:
         raise ValueError('FSDP CPU Offload not supported yet.')
     return cpu_offload

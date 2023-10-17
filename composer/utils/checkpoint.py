@@ -299,7 +299,7 @@ def _get_module_name_mapping(model: torch.nn.Module) -> dict[str, str]:
     module_name_mapping = {}
     world_size = dist.get_world_size()
     for module_name, module in model.named_modules():
-        if hasattr(module, 'process_group'):
+        if hasattr(module, 'process_group') and 'mlp' in module_name:
             process_group = module.process_group
             process_group_size = torch.distributed.get_world_size(process_group)
             if process_group_size != world_size:

@@ -506,6 +506,8 @@ def prepare_fsdp_module(
                 **kwargs,
             )
 
+            fsdp_obj._exec_order_data._backward_prefetch_limit = 2
+
             # Activation Checkpointing
             if activation_checkpointing or activation_cpu_offload:
                 if not activation_checkpointing_reentrant:

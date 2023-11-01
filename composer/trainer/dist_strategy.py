@@ -506,6 +506,7 @@ def prepare_fsdp_module(
                 **kwargs,
             )
 
+            fsdp_obj._exec_order_data._forward_prefetch_limit = 2
             fsdp_obj._exec_order_data._backward_prefetch_limit = 2
 
             # Activation Checkpointing

@@ -15,6 +15,45 @@ from composer.devices import DeviceCPU, DeviceGPU
 from composer.utils import dist, reproducibility
 
 
+import random
+import traceback
+def patched_function(original_function):
+    def wrapper(*args, **kwargs):
+        state_before = random.getstate()
+        result = original_function(*args, **kwargs)
+        state_after = random.getstate()
+
+        if state_before != state_after:
+            print(f"Random state changed by {original_function.__name__}. Stack trace:")
+            traceback.print_stack()
+
+        return result
+    return wrapper
+
+@pytest.fixture
+def patch_random_methods(monkeypatch):
+    for method_name in ['random', 'randint', 'shuffle', 'choice', 'randrange']:  # Add other methods as needed
+        original_method = getattr(random, method_name)
+        monkeypatch.setattr(random, method_name, patched_function(original_method))
+
+
+def patched_mcli_function(original_function):
+    def wrapper(*args, **kwargs):
+        result = original_function(*args, **kwargs)
+        traceback.print_stack()
+
+        return result
+    return wrapper
+
+import mcli
+@pytest.fixture
+def patch_mcli(monkeypatch):
+    for method_name in ['update_run_metadata', 'get_code_eval_output']:  # Add other methods as needed
+        original_method = getattr(mcli, method_name)
+        monkeypatch.setattr(mcli, method_name, patched_mcli_function(original_method))
+
+
+
 @pytest.fixture(autouse=True)
 def disable_tokenizer_parallelism():
     """This fixture prevents the below warning from appearing in tests:

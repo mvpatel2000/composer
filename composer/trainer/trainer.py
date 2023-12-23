@@ -2008,20 +2008,24 @@ class Trainer:
         if self.spin_dataloaders:
             self._spin_dataloaders_to_cur_epoch()
 
+        log.info('[2011]')
         if self.state.timestamp.batch_in_epoch == 0 and self._rng_state is not None:
             # Only restore the rng state here if the step in the current epoch is zero.
             reproducibility.load_rng_state(self._rng_state)
             self._rng_state = None
 
+        log.info('[2017]')
         self.state.model.train()
         finished_epoch_early = False
         last_wct = datetime.datetime.now()
 
+        log.info('[20022]')
         if self.state.max_duration is None:
             # This is essentially just a type check, as max_duration should always be
             # asserted to be not None when Trainer.fit() is called
             raise RuntimeError('max_duration must be specified when initializing the Trainer')
 
+        log.info('[2028]')
         while self.state.timestamp < self.state.max_duration:
             if int(self.state.timestamp.batch_in_epoch) == 0:
                 self.engine.run_event(Event.EPOCH_START)
@@ -2031,6 +2035,7 @@ class Trainer:
             if isinstance(dataloader, DataLoader) and isinstance(dataloader.sampler, DistributedSampler):
                 dataloader.sampler.set_epoch(int(self.state.timestamp.epoch))
 
+            log.info('[2038]')
             for batch_idx, self.state.batch in enumerate(self._iter_dataloader(TrainerMode.TRAIN)):
                 # Spin dataloader forward unless dataloader handles internally with dataset_resumption
                 if self.spin_dataloaders and 'train' not in self.state.dataset_resumption and batch_idx < int(
@@ -2041,6 +2046,7 @@ class Trainer:
                         self._rng_state = None
                     continue
 
+                log.info(f'[2049] {batch_idx=}')
                 self.state.batch = self.state.device.batch_to_device(self.state.batch)
                 self.state.batch = self._train_data_spec.device_transforms(self.state.batch)
                 rank_num_samples = self._train_data_spec.get_num_samples_in_batch(self.state.batch)
@@ -2049,8 +2055,10 @@ class Trainer:
                 if self.state.deepspeed_enabled:
                     self.state.batch = _fix_batch_precision_for_deepspeed(self.state.batch, self.state.precision)
 
+                log.info(f'[2058] {batch_idx=}')
                 self.engine.run_event(Event.AFTER_DATALOADER)
 
+                log.info(f'[2061] {batch_idx=}')
                 self.engine.run_event(Event.BATCH_START)
 
                 # Log time values
@@ -2064,11 +2072,13 @@ class Trainer:
                     self.logger.log_metrics({'time/token': self.state.timestamp.token.value})
                     self.logger.log_metrics({'time/token_in_epoch': self.state.timestamp.token_in_epoch.value})
 
+                log.info(f'[2075] {batch_idx=}')
                 total_loss_dict = self._train_batch(use_grad_scaling)
 
                 if use_grad_scaling:
                     self.state.scaler.update()
 
+                log.info(f'[2081] {batch_idx=}')
                 # total_loss_dict can be None if gradient scaling failed
                 if total_loss_dict is not None:
                     map_collection(total_loss_dict, dist.all_reduce)
@@ -2226,6 +2236,7 @@ class Trainer:
         # Any in-place changes to a microbatch will be reflected in the device batch.
         device_batch = self.state.batch
 
+        log.info(f'[2238]')
         # Retry until we successfully complete training and return loss
         while True:
             # Reset train_metrics on every batch
@@ -2240,6 +2251,7 @@ class Trainer:
                 assert self.state.scaler is not None
                 assert self.state.device_train_microbatch_size is not None
                 microbatches = self._train_data_spec.split_batch(device_batch, self.state.device_train_microbatch_size)
+                log.info(f'[2254]')
                 if self._use_closures():
                     for optimizer in self.state.optimizers:
                         if use_grad_scaling:
@@ -2250,6 +2262,7 @@ class Trainer:
                             optimizer.step(closure=lambda loss_dict=total_loss_dict, **kwargs: self._train_microbatches(
                                 microbatches, loss_dict, **kwargs).item())
                 else:
+                    log.info(f'[2265]')
                     self._train_microbatches(microbatches, total_loss_dict)
                     if not self.state.deepspeed_enabled:
                         for optimizer in self.state.optimizers:
@@ -2328,6 +2341,7 @@ class Trainer:
 
         assert self._train_data_spec is not None
 
+        log.info(f'[2344]')
         with context():
             self.engine.run_event(Event.BEFORE_TRAIN_BATCH)
 
@@ -2348,8 +2362,10 @@ class Trainer:
             # Cache batch, which will be overwritten by microbatches. Restore after microbatches complete
             current_batch = self.state.batch
 
+            log.info(f'[2365]')
             for microbatch_idx, self.state.batch in enumerate(microbatches):
                 is_final_microbatch = microbatch_idx + 1 == len(microbatches)
+                log.info(f'[2368]')
                 microbatch_loss_dict = self._train_microbatch(use_grad_scaling, current_batch_size, is_final_microbatch)
 
                 # Aggregate each loss in microbatch_loss_dict into total_loss_dict
@@ -2408,13 +2424,16 @@ class Trainer:
                 self._ddp_sync_strategy,
             )
 
+        log.info(f'[2427]')
         with sync_context:
             # Forward pass
             self.engine.run_event(Event.BEFORE_FORWARD)
 
+            log.info(f'[2432]')
             with _get_precision_context(self.state.precision, self.state.precision_config,
                                         self.state.deepspeed_enabled):
                 self.state.outputs = self.state.model(self.state.batch)
+            log.info(f'[2436]')
 
             self.engine.run_event(Event.AFTER_FORWARD)
 

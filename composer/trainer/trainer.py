@@ -2019,7 +2019,7 @@ class Trainer:
         finished_epoch_early = False
         last_wct = datetime.datetime.now()
 
-        log.info('[20022]')
+        log.info('[2022]')
         if self.state.max_duration is None:
             # This is essentially just a type check, as max_duration should always be
             # asserted to be not None when Trainer.fit() is called
@@ -2037,9 +2037,11 @@ class Trainer:
 
             log.info('[2038]')
             for batch_idx, self.state.batch in enumerate(self._iter_dataloader(TrainerMode.TRAIN)):
+                log.info(f'[2040] {batch_idx=}')
                 # Spin dataloader forward unless dataloader handles internally with dataset_resumption
                 if self.spin_dataloaders and 'train' not in self.state.dataset_resumption and batch_idx < int(
                         self.state.timestamp.batch_in_epoch):
+                    log.info(f'[2044] {batch_idx=}')
                     # Restore the RNG state immediately before the next batch is yielded from the dataloader
                     if batch_idx + 1 == int(self.state.timestamp.batch_in_epoch) and self._rng_state is not None:
                         reproducibility.load_rng_state(self._rng_state)

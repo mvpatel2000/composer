@@ -3053,17 +3053,27 @@ class Trainer:
         """
         assert self.state.dataloader is not None, 'the dataloader should be set before calling this method'
 
+        log.info('[3056]')
         if self.state.dataloader_len is None:
+            log.info('[3058]')
             dataloader_iter = iter(self.state.dataloader)
+            log.info('[3060]')
         else:
+            log.info('[3062]')
             dataloader_iter = itertools.islice(self.state.dataloader, int(self.state.dataloader_len))
+            log.info('[3064]')
 
+        log.info('[3066]')
         while True:
+            log.info('[3068]')
             try:
+                log.info('[3070]')
                 # [BEFORE/AFTER]_DATALOADER only runs while training
                 if trainer_mode == TrainerMode.TRAIN:
                     self.engine.run_event(Event.BEFORE_DATALOADER)
+                log.info('[3074]')
                 batch = next(dataloader_iter)
+                log.info('[3076]')
             except StopIteration:
                 # [BEFORE/AFTER]_DATALOADER only runs while training
                 if trainer_mode == TrainerMode.TRAIN:
@@ -3074,7 +3084,9 @@ class Trainer:
                     # Event.BEFORE_DATALOADER tries to start an unfinished marker.
                     self.engine.run_marker_only_event(Event.AFTER_DATALOADER)
                 break
+            log.info('[3087]')
             yield batch
+            log.info('[3089]')
 
     def _use_closures(self) -> bool:
         """Determines based on precision and optimizers whether to use closures.

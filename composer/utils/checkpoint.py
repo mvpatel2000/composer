@@ -165,11 +165,15 @@ class PartialFilePath:
 def is_checkpoint_legacy_sharded(object_store: Optional[ObjectStore], source_path: str):
     metadata_path = str(Path(source_path) / Path('.metadata'))
     if object_store is None:
+        if not os.path.exists(source_path):
+            raise FileNotFoundError(f"Couldn't find the directory {source_path}")
         return not os.path.exists(metadata_path)
     else:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 metadata_destination = os.path.join(str(temp_dir), '.metadata')
+                if len(object_store.list_objects(prefix=source_path)) == 0:
+                    raise FileNotFoundError(f"Couldn't find the prefix {object_store.get_uri(object_name=source_path)}")
                 object_store.download_object(object_name=metadata_path, filename=metadata_destination)
             return False
         except FileNotFoundError:
@@ -493,32 +497,30 @@ def load_sharded_checkpoint(
         else:
             storage_reader = FileSystemReaderWithValidation(source_path)
 
+
         # We need no_grad because we overwrite tensor values with set_() when we do elastic loading and we don't want the set_ op recorded in the computation graph.
         with torch.no_grad():
             # 1. Load model and metadata first
-            model_state_dict = None
             if load_weights_only:
-                model_state_dict = {'state': {'model': state.get_model_state_dict()}}
+                state_dict = {'state': {'model': state.get_model_state_dict()}}
             else:
                 cur_state_dict = state.state_dict()
-                cur_state_dict.pop('optimizers')
-                model_state_dict = {'state': cur_state_dict}
+                # For older versions of torch, we load optimizier separately.
+                if version.parse(torch.__version__) <= version.parse("2.1.2"):
+                    cur_state_dict.pop('optimizers')
+                state_dict = {'state': cur_state_dict}
 
             if ignore_keys:
                 # Filter provided list of key paths
                 if not callable(ignore_keys):
                     ignore_keys = glob_filter(ignore_keys)
                 # Call function to modify state_dict
-                ignore_keys(model_state_dict)
+                ignore_keys(state_dict)
 
-            dist_cp.load_state_dict(
-                state_dict=model_state_dict,
-                storage_reader=storage_reader,
-                planner=load_planner,
-            )
+            dist_cp.load_state_dict(state_dict, storage_reader)
 
             state.load_state_dict(
-                model_state_dict['state'],
+                state_dict['state'],
                 logger,
                 strict=strict_model_weights,
                 exclude_algorithms=exclude_algorithms,
@@ -526,7 +528,8 @@ def load_sharded_checkpoint(
             )
 
             # 2. Optionally load optimizer
-            if not load_weights_only:
+            # if we are using later than 2.1.0 then optimizer will already be loaded
+            if version.parse(torch.__version__) <= version.parse("2.1.2") and not load_weights_only:
                 optim_state = load_sharded_optimizer_state_dict(model_state_dict=state.state_dict()['model'],
                                                                 optimizer_key='optimizers',
                                                                 storage_reader=storage_reader)
@@ -859,12 +862,13 @@ def _restore_checkpoint(
         if load_path is None:
             raise RuntimeError(f'Failed to load DeepSpeed checkpoint')
     elif load_weights_only:
-        state.load_model_state(
+        state.load_model_and_optimizer_state(
             state_dict['state'],
             logger,
             strict=strict_model_weights,
             exclude_algorithms=exclude_algorithms,
             algorithm_passes=algorithm_passes,
+            load_model_only=True
         )
     if not load_weights_only:
         state.load_state_dict(
@@ -904,12 +908,12 @@ def save_checkpoint(
 
     # Sharded checkpoints get their own little folder.
     if state.fsdp_sharded_state_dict_enabled:
-        # To load optimizer states with torch 2.0, the optimizer state must be at the top
+        # To load optimizer states with 2.0 <= torch <= 2.1.2 , the optimizer state must be at the top
         # level of the state dict because the load_sharded_optimizer_state_dict function
         # requires a top level state dict key for the optimizer.
         # See https://github.com/pytorch/pytorch/blob/v2.0.1/torch/distributed/checkpoint/optimizer.py#L271
         # for more info.
-        if using_torch_2():
+        if using_torch_2() and version.parse(torch.__version__) <= version.parse("2.1.2"):
             if not weights_only:
                 state_dict['optimizers'] = state_dict['state'].pop('optimizers')
 
@@ -951,11 +955,14 @@ def save_checkpoint(
         import torch.distributed.checkpoint as dist_cp
 
         log.debug('Saving sharded checkpoints to %s...', save_filename)
-        dist_cp.save_state_dict(
+        from composer.utils import checkpoint_debug
+        log.warning('starting pytorch save state dict')
+        checkpoint_debug.save_state_dict(
             state_dict=state_dict,
             storage_writer=dist_cp.FileSystemWriter(dirname),
             planner=save_planner,
         )
+        log.warning('finished pytorch save state dict')
 
     # Only rank 0 saves the state_dict unless you are using sharded checkpointing with torch <2.0
     elif dist.get_global_rank() == 0 or state.fsdp_sharded_state_dict_enabled:
@@ -972,7 +979,9 @@ def save_checkpoint(
     else:
         log.debug(f'Only rank 0 is saving a checkpoint, so rank {dist.get_global_rank()} skips checkpointing.')
 
+    log.warning('starting dist barrier')
     dist.barrier()  # ensure all ranks saved their files
+    log.warning('finished dist barrier')
 
     if dist.get_global_rank() == 0 or is_deepspeed or state.fsdp_sharded_state_dict_enabled:
         assert os.path.exists(save_filename), 'Expected file to have been saved.'

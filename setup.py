@@ -109,7 +109,7 @@ extra_deps['dev'] = [
     'jupyter==1.0.0',
     'yamllint==1.33.0',
     'recommonmark==0.7.1',
-    'sphinx==4.4.0',
+    'sphinx==7.2.6',
     'pre-commit>=3.4.0,<4',
     # embedding md in rst require docutils>=0.17. See
     # https://myst-parser.readthedocs.io/en/latest/sphinx/use.html?highlight=parser#include-markdown-files-into-an-rst-file
@@ -119,7 +119,7 @@ extra_deps['dev'] = [
     'sphinxcontrib.katex==0.9.6',
     'sphinxext.opengraph==0.9.1',
     'sphinxemoji==0.2.0',
-    'furo==2022.9.29',
+    'furo==2023.9.10',
     'sphinx-copybutton==0.5.2',
     'testbook==0.4.2',
     'myst-parser==0.16.1',

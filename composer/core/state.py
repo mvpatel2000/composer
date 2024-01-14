@@ -1270,6 +1270,7 @@ class State(Serializable):
             strict (bool): Whether the keys (i.e., optimizer parameter names) in the optimizer
                 state dict should perfectly match the keys in the optimizer instance.
         """
+        assert False, f'Loading optim state {state_dict=}'
         if version.parse(torch.__version__) > version.parse('2.1.3'):
             from torch.distributed.checkpoint.state_dict import StateDictOptions, set_optimizer_state_dict
             optimizer = self.optimizers[0]

@@ -1117,11 +1117,13 @@ if version.parse(torch.__version__) > version.parse('2.1.3') and version.parse(
                                                                 rank0_only=options.cpu_offload)
                 state_dict_type = StateDictType.FULL_STATE_DICT
             else:
-                state_dict_config = ShardedStateDictConfig()
+                state_dict_config = ShardedStateDictConfig(offload_to_cpu=options.cpu_offload,)
                 optim_state_dict_config = ShardedOptimStateDictConfig(offload_to_cpu=options.cpu_offload,)
                 state_dict_type = StateDictType.SHARDED_STATE_DICT
 
+            print('\n\n' + '*'*100)
             print(f'{state_dict_config=}, {optim_state_dict_config=}, {state_dict_type=}')
+            print('*'*100 + '\n\n')
 
             fsdp_context = functools.partial(
                 FSDP.state_dict_type,

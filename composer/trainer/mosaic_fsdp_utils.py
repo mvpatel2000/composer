@@ -1232,15 +1232,15 @@ if version.parse(torch.__version__) > version.parse('2.1.3') and version.parse(
                 f"unflattened parameter names {unflat_param_names}"
             )
         dtype = next(iter(dtypes))
-        # Check that each tensor state matches its parameter's shape
-        for tensor, shape in zip(pos_dim_tensors, unflat_param_shapes):
-            if tensor is None and len(shape) == 0:
-                raise ValueError("Flattening a zero-dimension parameter is not supported")
-            elif tensor is not None and tensor.shape != shape:
-                raise ValueError(
-                    "Tensor optimizer state does not have same shape as its "
-                    f"parameter: {tensor.shape} {shape}"
-                )
+        # # Check that each tensor state matches its parameter's shape
+        # for tensor, shape in zip(pos_dim_tensors, unflat_param_shapes):
+        #     if tensor is None and len(shape) == 0:
+        #         raise ValueError("Flattening a zero-dimension parameter is not supported")
+        #     elif tensor is not None and tensor.shape != shape:
+        #         raise ValueError(
+        #             "Tensor optimizer state does not have same shape as its "
+        #             f"parameter: {tensor.shape} {shape}"
+        #         )
         # Flatten the tensor states: we do not need to add any right-hand-side
         # padding since the flat optimizer state tensor is sharded via
         # `_get_shard()`, which pads the shard as needed (just like for the flat

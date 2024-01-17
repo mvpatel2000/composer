@@ -1533,6 +1533,8 @@ def _share_state_and_init_handle_attrs_t2p2(
         fsdp_state._default_stream = root_state._default_stream
         fsdp_state._exec_order_data = root_state._exec_order_data
         fsdp_state._free_event_queue = root_state._free_event_queue
+        if fsdp_state._fsdp_extension is not None:
+            fsdp_state._fsdp_extension.compute_stream = root_state._default_stream
         handle = fsdp_state._handle
         if handle:
             handle.init_flat_param_attributes()

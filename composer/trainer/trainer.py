@@ -2109,6 +2109,8 @@ class Trainer:
 
                 self.engine.run_event(Event.BATCH_START)
 
+                log.info(f'Epoch {self.state.timestamp.epoch}, Batch {self.state.timestamp.batch_in_epoch}')
+
                 # Log time values
                 self.logger.log_metrics({
                     'time/batch': self.state.timestamp.batch.value,

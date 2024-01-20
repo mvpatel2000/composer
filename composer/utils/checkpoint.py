@@ -555,14 +555,6 @@ def load_sharded_checkpoint(
         #     rng_state_dicts_load = {}
         #     rng_state_dicts_load['rng'] = rng_state_dicts[:num_ranks_that_saved_rng] if len(
         #         rng_state_dicts) > num_ranks_that_saved_rng else rng_state_dicts
-        #     if ignore_keys:
-        #         # Filter provided list of key paths
-        #         if not callable(ignore_keys):
-        #             ignore_keys = glob_filter(ignore_keys)
-        #         # Call function to modify state_dict
-        #         ignore_keys(state_dict)
-        #         # Ensure state exists
-        #         state_dict['state'] = state_dict.get('state', {})
         #     dist_cp.load_state_dict(
         #         state_dict=rng_state_dicts_load,
         #         storage_reader=storage_reader,

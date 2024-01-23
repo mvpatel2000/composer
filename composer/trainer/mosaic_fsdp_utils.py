@@ -1189,7 +1189,7 @@ if version.parse(torch.__version__) > version.parse('2.1.3') and version.parse(
         use_orig_params: bool = False,
         optim: Optional[torch.optim.Optimizer] = None,
         rank0_only: bool = False,
-        group: Optional[dist.ProcessGroup] = None,
+        group = None,
     ) -> Dict[str, Any]:
         """
         Flattens the full optimizer state dict, still keying by unflattened parameter

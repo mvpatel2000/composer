@@ -1179,6 +1179,7 @@ if version.parse(torch.__version__) > version.parse('2.1.3') and version.parse(
                 value = value.flatten()[intra_param_start_idx : intra_param_end_idx + 1].clone()  # type: ignore[operator]
             new_optim_state[state_name] = value
         del optim_state
+        torch.cuda.synchronize()
         return new_optim_state
 
     from torch.distributed.fsdp._optim_utils import _broadcast_state, _broadcast_processed_state, _get_param_to_fqns, _get_fqn_to_fsdp_param_info, _OptimStateKey

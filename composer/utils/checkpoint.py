@@ -541,8 +541,13 @@ def load_sharded_checkpoint(
             
             if device_mesh is not None and device_mesh.ndim == 2:
                 process_group = device_mesh.get_group(1)  # Replicate process_group
+                shard_size = device_mesh.size(1)
                 state_dict_list = [state_dict]
-                dist.broadcast_object_list(state_dict_list, group=process_group)
+                dist.broadcast_object_list(
+                    state_dict_list,
+                    src=dist.get_global_rank() % shard_size,
+                    group=process_group,
+                )
                 state_dict = state_dict_list[0]
 
             state.load_state_dict(

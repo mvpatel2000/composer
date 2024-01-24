@@ -523,20 +523,27 @@ def load_sharded_checkpoint(
             else:
                 expect_file = True
 
-            if version.parse(torch.__version__) > version.parse('2.1.3'):
-                dist_cp.load(  # type: ignore
-                    state_dict=state_dict,
-                    storage_reader=storage_reader,
-                    planner=load_planner,
-                    process_group=process_group,
-                )
-            else:
-                dist_cp.load_state_dict(
-                    state_dict=state_dict,
-                    storage_reader=storage_reader,
-                    planner=load_planner,
-                    process_group=process_group,
-                )
+            if expect_file:
+                if version.parse(torch.__version__) > version.parse('2.1.3'):
+                    dist_cp.load(  # type: ignore
+                        state_dict=state_dict,
+                        storage_reader=storage_reader,
+                        planner=load_planner,
+                        process_group=process_group,
+                    )
+                else:
+                    dist_cp.load_state_dict(
+                        state_dict=state_dict,
+                        storage_reader=storage_reader,
+                        planner=load_planner,
+                        process_group=process_group,
+                    )
+            
+            if device_mesh is not None and device_mesh.ndim == 2:
+                process_group = device_mesh.get_group(1)  # Replicate process_group
+                state_dict_list = [state_dict]
+                dist.broadcast_object_list(state_dict_list, process_group=process_group)
+                state_dict = state_dict_list[0]
 
             state.load_state_dict(
                 state_dict['state'],

@@ -2079,6 +2079,8 @@ class Trainer:
             # This is essentially just a type check, as max_duration should always be
             # asserted to be not None when Trainer.fit() is called
             raise RuntimeError('max_duration must be specified when initializing the Trainer')
+        
+        log.info('START TRAINING')
 
         while self.state.timestamp < self.state.max_duration:
             if int(self.state.timestamp.batch_in_epoch) == 0:

@@ -260,6 +260,7 @@ class Engine():
         event = Event(event)
 
         self._debug_log(event, 'Running event')
+        print(f'Running event {event}')
 
         if self._is_closed:
             raise RuntimeError((

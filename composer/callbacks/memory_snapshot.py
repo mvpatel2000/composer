@@ -71,7 +71,7 @@ class MemorySnapshot(Callback):
 
     def __init__(
         self,
-        skip_batches: int = 1,
+        skip_batches: int = 0,
         interval: Union[int, str, Time] = '3ba',
         max_entries: int = 100000,
         folder: str = '{run_name}/torch_traces',
@@ -121,6 +121,12 @@ class MemorySnapshot(Callback):
         if self._enabled and self._start_time is None and self.batches_left_to_skip == 0:
             self.start_record_memory_history()
             self._start_time = state.timestamp.get(self.interval.unit).value
+
+    def after_loss(self, state: State, logger: Logger) -> None:
+        self.export_memory_snapshot(state, logger)
+        self.stop_record_memory_history()
+        self._start_time = None
+        self._enabled = False
 
     def batch_end(self, state: State, logger: Logger) -> None:
         if not self._enabled:

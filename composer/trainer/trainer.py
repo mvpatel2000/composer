@@ -3050,10 +3050,12 @@ class Trainer:
                     )
             else:
                 current_batch_size = sum([self._train_data_spec.get_num_samples_in_batch(b) for b in microbatches])
+            print(f'current_batch_size: {current_batch_size}')
             # Average the current batch size across ranks, to ensure each rank contributes appropriately
             current_batch_size = self.state.device.tensor_to_device(torch.tensor(current_batch_size))
             dist.all_reduce(current_batch_size, reduce_operation='SUM')
             current_batch_size = current_batch_size.item() / dist.get_world_size()
+            print(f'current_batch_size post reduction: {current_batch_size}')
 
             # Cache batch, which will be overwritten by microbatches. Restore after microbatches complete
             current_batch = self.state.batch
@@ -3164,6 +3166,7 @@ class Trainer:
                 self.state.deepspeed_enabled,
             ):
                 self.state.loss = self._original_model.loss(self.state.outputs, self.state.batch)
+                print(f'loss: {self.state.loss}')
 
             assert self.state.loss is not None
             self.engine.run_event(Event.AFTER_LOSS)
@@ -3196,6 +3199,7 @@ class Trainer:
             # For each loss to log: detach, clone, mean, then multiply by (microbatch size) / (batch size)
             for k, loss in microbatch_loss_dict.items():
                 microbatch_loss_dict[k] = loss.detach().clone().mean() * (microbatch_size / current_batch_size)
+                print(f'{k}: {microbatch_loss_dict[k]} with {microbatch_size=}, {current_batch_size=}')
 
             if use_grad_scaling:
                 microbatch_loss = cast(torch.Tensor, self.state.scaler.scale(microbatch_loss))  # type: ignore

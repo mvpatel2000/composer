@@ -3063,6 +3063,7 @@ class Trainer:
             for microbatch_idx, self.state.batch in enumerate(microbatches):
                 self.state.batch = self.state.device.batch_to_device(self.state.batch)
                 is_final_microbatch = microbatch_idx + 1 == len(microbatches)
+                print(f'{microbatch_idx=}, {self.state.batch=}')
                 microbatch_loss_dict = self._train_microbatch(use_grad_scaling, current_batch_size, is_final_microbatch)
 
                 # Aggregate each loss in microbatch_loss_dict into total_loss_dict
